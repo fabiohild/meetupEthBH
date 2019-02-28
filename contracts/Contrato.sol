@@ -1,4 +1,4 @@
-pragma solidity^0.4.0;
+pragma solidity 0.4.0;
 
 contract TestToken {
     string constant name = "IC3 2017 Bootcamp Token";
@@ -72,7 +72,10 @@ contract TestToken {
         if ( allowed[_from]._allowed[msg.sender] < _value) return false;
         if (balances[_to] + _value < _value) return false;
 
+        uint oldBalance = balances[from];
         balances[_from] -= _value;
+        assert(oldBalance > balances[_from]);
+
         balances[_to] += _value;
         allowed[_from]._allowed[msg.sender] -= _value;
         return true;
